@@ -1,5 +1,5 @@
-use crate::magic::{find_magic, find_magic_square};
-use crate::types::{PieceType, Square};
+use crate::magic::{find_magic};
+use crate::types::{PieceType};
 
 mod position;
 mod types;
@@ -8,9 +8,17 @@ mod movegen;
 mod movelist;
 mod magic;
 
+use std::thread;
+
 fn main() {
-    let x = find_magic_square::<{PieceType::Bishop as u8}>(Square::E4, 9);
-    if x.is_some() {
-        println!("{}", x.unwrap());
-    }
+    let rook_handle = thread::spawn(|| {
+        find_magic::<{ PieceType::Rook as u8 }>("magic_rook.txt");
+    });
+
+    let bishop_handle = thread::spawn(|| {
+        find_magic::<{ PieceType::Bishop as u8 }>("magic_bishop.txt");
+    });
+
+    rook_handle.join().unwrap();
+    bishop_handle.join().unwrap();
 }

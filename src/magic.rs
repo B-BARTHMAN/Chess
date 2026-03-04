@@ -117,102 +117,187 @@ fn transform_mask(mut mask: Bitboard, mut i: u16) -> Bitboard {
     result
 }
 
-fn test_magic<const PT: u8>(square: Square, magic: u64, bits: u8) -> bool {
-    let mut used = vec![false; 1 << bits];
-    let mut slides = vec![0u64; 1 << bits];
-    let all_slides = generate_mask::<PT>(square);
-    let possibilities = count_1s(all_slides);
+fn test_magic<const PT: u8>(square: Square, mask: Bitboard, magic: u64, bits: u8, used: &mut [bool], slides: &mut [u64], ) -> bool {
+    let table_size = 1usize << bits;
+
+    // Reset buffers
+    for i in 0..table_size {
+        used[i] = false;
+    }
+
+    let possibilities = count_1s(mask);
 
     for i in 0..(1 << possibilities) {
-        let mask = transform_mask(all_slides, i);
-        let slides_to = sliding_attacks::<PT>(square, mask);
-        let index = (mask.wrapping_mul(magic)) >> (64 - bits);
+        let occupancy = transform_mask(mask, i as u16);
+        let attack = sliding_attacks::<PT>(square, occupancy);
 
-        if used[index as usize] && slides[index as usize] != slides_to {
-            return false;
+        let index = (occupancy.wrapping_mul(magic)) >> (64 - bits);
+        let idx = index as usize;
+
+        if used[idx] {
+            if slides[idx] != attack {
+                return false;
+            }
+        } else {
+            used[idx] = true;
+            slides[idx] = attack;
         }
-        used[index as usize] = true;
-        slides[index as usize] = slides_to;
     }
 
     true
 }
 
-pub fn find_magic_square<const PT: u8>(square: Square, bits: u8) -> Option<u64> {
-    for _i in 0..100000000000u64 {
+fn find_magic_square<const PT: u8>(square: Square, mask: Bitboard, bits: u8, ) -> Option<u64> {
+    let table_size = 1usize << bits;
+
+    // Allocate once per square search
+    let mut used = vec![false; table_size];
+    let mut slides = vec![0u64; table_size];
+
+    for _ in 0..1_000_0000u64 {
+        // Restrict random candidate to relevant bits
         let magic = rand::random::<u64>();
-        if test_magic::<PT>(square, magic, bits) {
+
+        if test_magic::<PT>(
+            square,
+            mask,
+            magic,
+            bits,
+            &mut used,
+            &mut slides,
+        ) {
             return Some(magic);
         }
     }
+
     None
 }
 
+#[inline(always)]
 fn max_bits<const PT: u8>(square: Square) -> u8 {
     count_1s(generate_mask::<PT>(square)) + 1
 }
 
-pub fn find_magic<const PT: u8>() {
+pub fn find_magic<const PT: u8>(filepath: &str) {
     let mut magics: [Option<u64>; Square::SquareNb as usize] = [None; Square::SquareNb as usize];
-    let mut shifts: [Option<u8>; Square::SquareNb as usize] = [None; Square::SquareNb as usize];
+    let mut shifts: [Option<u8>;  Square::SquareNb as usize] = [None; Square::SquareNb as usize];
+
+    let mut masks = [0u64; Square::SquareNb as usize];
+    let mut max_bits_arr = [0u8; Square::SquareNb as usize];
+
+    for square in 0..Square::SquareNb as usize {
+        let sq = Square::from_index(square as i8);
+        let mask = generate_mask::<PT>(sq);
+        masks[square] = mask;
+        max_bits_arr[square] = count_1s(mask) + 1;
+    }
 
     loop {
-        for square in 0..Square::SquareNb as i8 {
-            let bits = if let Some(existing) = shifts[square as usize] {
+        let mut skip_count = 0;
+        'forloop: for square in 0..Square::SquareNb as usize {
+            let sq = Square::from_index(square as i8);
+
+            let bits = if let Some(existing) = shifts[square] {
                 existing - 1
             } else {
-                max_bits::<PT>(Square::from_index(square))
+                max_bits_arr[square]
             };
-
-            if bits == max_bits::<PT>(Square::from_index(square)) - 2 {
-                continue;
+            //////////////
+            if filepath.contains("rook"){
+                if bits < best_rook[sq as usize] {
+                    skip_count += 1;
+                    if skip_count == Square::SquareNb as usize {
+                        return
+                    }
+                    continue 'forloop;
+                }
             }
+            else if filepath.contains("bishop"){
+                if bits < best_bishop[sq as usize] {
+                    skip_count += 1;
+                    if skip_count == Square::SquareNb as usize {
+                        return
+                    }
+                    continue 'forloop;
+                }
+            }
+            ////
 
-            let magic = find_magic_square::<PT>(Square::from_index(square), bits);
+            /*if bits == (max_bits_arr[square] - 3) {
+                continue;
+            }*/
+
+
+            let magic= find_magic_square::<PT>(sq, masks[square], bits);
 
             if let Some(m) = magic {
-                magics[square as usize] = Some(m);
-                shifts[square as usize] = Some(bits);
+                magics[square] = Some(m);
+                shifts[square] = Some(bits);
             }
-
-            // Count how many magics found so far
-            let found = magics.iter().filter(|m| m.is_some()).count();
-
-            // Estimate table size
-            let total_entries: u64 = shifts.iter().filter_map(|&s| s).map(|s| 1u64 << s).sum();
-
-            let total_kb = (total_entries * 8) as f64 / 1024.0;
-
-            println!(
-                "Found: {}/{} | Estimated table size: {} KB",
-                found,
-                Square::SquareNb as i8,
-                total_kb
-            );
         }
 
-        // Check if all entries are Some
-        if magics.iter().all(|m| m.is_some()) && shifts.iter().all(|s| s.is_some()) {
-            println!("All magic numbers found! Saving to file...");
+        let found = magics.iter().filter(|m| m.is_some()).count();
 
-            let mut file = std::fs::File::create("magic_rook.txt").expect("Failed to create file");
+        let total_entries: u64 = shifts
+            .iter()
+            .filter_map(|&s| s)
+            .map(|s| 1u64 << s)
+            .sum();
+
+        let total_kb = (total_entries * 8) as f64 / 1024.0;
+
+        println!(
+            "{filepath}: Found: {}/{} | Estimated table size: {} KB,  skipped {skip_count}",
+            found,
+            Square::SquareNb as i8,
+            total_kb
+        );
+
+        if magics.iter().all(|m| m.is_some())
+            && shifts.iter().all(|s| s.is_some())
+        {
+            //println!("All magic numbers found! Saving to file...");
+
+            let mut file =
+                std::fs::File::create(filepath).expect("Failed to create file");
 
             writeln!(file, "Magics:").unwrap();
             for m in magics.iter() {
-                writeln!(file, "{:?}", m.unwrap()).unwrap();
+                writeln!(file, "{}", m.unwrap()).unwrap();
             }
 
             writeln!(file, "\nShifts:").unwrap();
             for s in shifts.iter() {
-                writeln!(file, "{:?}", s.unwrap()).unwrap();
+                writeln!(file, "{}", s.unwrap()).unwrap();
             }
 
-            println!("Saved to magic_rook.txt");
+            //println!("Saved to {}", filepath);
         }
 
-        println!("Restarting search...\n");
+        //println!("Restarting search...\n");
     }
 }
+
+const best_bishop: [u8; Square::SquareNb as usize] = [
+    5, 4, 5, 5, 5, 5, 4, 5,
+    4, 4, 5, 5, 5, 5, 4, 4,
+    4, 4, 7, 7, 7, 7, 4, 4,
+    5, 5, 7, 9, 9, 7, 5, 5,
+    5, 5, 7, 9, 9, 7, 5, 5,
+    4, 4, 7, 7, 7, 7, 4, 4,
+    4, 4, 5, 5, 5, 5, 4, 4,
+    5, 4, 5, 5, 5, 5, 4, 5
+];
+const best_rook: [u8; Square::SquareNb as usize] = [
+    12, 11, 11, 11, 11, 11, 11, 12,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    10,  9,  9,  9,  9,  9,  9, 10,
+    11, 10, 10, 10, 10, 11, 10, 11
+];
 
 pub const MAGIC_BISHOP: [u64; Square::SquareNb as usize] = [
     0xffedf9fd7cfcffff, 0xfc0962854a77f576, 0x73501c21c9d00f33, 0x66841c0f822ccb7d, 0x50d60a101bdf5d70, 0xa4260170ffb15c3b, 0xfc0a66c64a7ef576, 0x7ffdfdfcbd79ffff,
