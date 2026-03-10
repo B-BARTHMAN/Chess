@@ -1,21 +1,21 @@
 use crate::types::{Bitboard, Square, Direction, File, Rank};
 
-const A_FILE: Bitboard = 0x0101010101010101u64;
+pub const A_FILE: Bitboard = 0x0101010101010101u64;
 const B_FILE: Bitboard = A_FILE << 1;
 const C_FILE: Bitboard = A_FILE << 2;
 const D_FILE: Bitboard = A_FILE << 3;
 const E_FILE: Bitboard = A_FILE << 4;
 const F_FILE: Bitboard = A_FILE << 5;
 const G_FILE: Bitboard = A_FILE << 6;
-const H_FILE: Bitboard = A_FILE << 7;
+pub const H_FILE: Bitboard = A_FILE << 7;
 
 const RANK_1: Bitboard = 0xFFu64;
-const RANK_2: Bitboard = RANK_1 << (8 * 1);
-const RANK_3: Bitboard = RANK_1 << (8 * 2);
+pub const RANK_2: Bitboard = RANK_1 << (8 * 1);
+pub const RANK_3: Bitboard = RANK_1 << (8 * 2);
 const RANK_4: Bitboard = RANK_1 << (8 * 3);
 const RANK_5: Bitboard = RANK_1 << (8 * 4);
-const RANK_6: Bitboard = RANK_1 << (8 * 5);
-const RANK_7: Bitboard = RANK_1 << (8 * 6);
+pub const RANK_6: Bitboard = RANK_1 << (8 * 5);
+pub const RANK_7: Bitboard = RANK_1 << (8 * 6);
 const RANK_8: Bitboard = RANK_1 << (8 * 7);
 
 #[inline(always)]

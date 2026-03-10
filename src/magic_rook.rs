@@ -1,5 +1,6 @@
 use crate::types::{Bitboard, Square};
 
+#[inline(always)]
 pub fn rook_attacks(square: Square, blockers: Bitboard) -> Bitboard {
     let mask = MASK_ROOK[square as usize];
     let magic = MAGIC_ROOK[square as usize];
@@ -8,6 +9,7 @@ pub fn rook_attacks(square: Square, blockers: Bitboard) -> Bitboard {
     let index = (blockers & mask).wrapping_mul(magic) >> (64 - shift);
     lookup(square, index as usize)
 }
+#[inline(always)]
 const fn lookup(square: Square, index: usize) -> Bitboard {
     match square{
         Square::SquareNone => {0u64}

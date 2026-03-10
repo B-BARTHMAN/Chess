@@ -1,3 +1,5 @@
+use crate::types::MoveType::Normal;
+use crate::types::Piece::NoPiece;
 
 #[repr(u8)]
 #[derive(Copy, Clone)]
@@ -6,6 +8,7 @@ pub enum PieceType {
     Pawn = 1, Knight, Bishop, Rook, Queen, King,
     PieceTypeNb = 7,
 }
+
 #[repr(u8)]
 #[derive(Copy, Clone)]
 pub enum Piece {
@@ -13,6 +16,63 @@ pub enum Piece {
     WPawn = 1, WKnight, WBishop, WRook, WQueen, WKing,
     BPawn, BKnight, BBishop, BRook, BQueen, BKing,
     PieceNb = 32,
+}
+
+impl Piece {
+    #[inline(always)]
+    pub const fn from_fen(fen: char) -> Piece {
+        match fen {
+            'k' => Piece::BKing,
+            'q' => Piece::BQueen,
+            'n' => Piece::BKnight,
+            'b' => Piece::BBishop,
+            'r' => Piece::BRook,
+            'p' => Piece::BPawn,
+            'K' => Piece::WKing,
+            'Q' => Piece::WQueen,
+            'N' => Piece::WKnight,
+            'B' => Piece::WBishop,
+            'R' => Piece::WRook,
+            'P' => Piece::WPawn,
+            _ => Piece::NoPiece,
+        }
+    }
+    #[inline(always)]
+    pub const fn piece_type(&self) -> PieceType {
+        match self {
+            Piece::BKing => PieceType::King,
+            Piece::WPawn => PieceType::Pawn,
+            Piece::WKnight => PieceType::Knight,
+            Piece::WBishop => PieceType::Bishop,
+            Piece::WRook => PieceType::Rook,
+            Piece::WQueen => PieceType::Queen,
+            Piece::WKing => PieceType::King,
+            Piece::BPawn => PieceType::Pawn,
+            Piece::BKnight => PieceType::Knight,
+            Piece::BBishop => PieceType::Bishop,
+            Piece::BRook => PieceType::Rook,
+            Piece::BQueen => PieceType::Queen,
+            _ => PieceType::NoPieceType,
+        }
+    }
+    #[inline(always)]
+    pub const fn color(&self) -> Color {
+        match self {
+            Piece::BKing => Color::Black,
+            Piece::WPawn => Color::White,
+            Piece::WKnight => Color::White,
+            Piece::WBishop => Color::White,
+            Piece::WRook => Color::White,
+            Piece::WQueen => Color::White,
+            Piece::WKing => Color::White,
+            Piece::BPawn => Color::Black,
+            Piece::BKnight => Color::Black,
+            Piece::BBishop => Color::Black,
+            Piece::BRook => Color::Black,
+            Piece::BQueen => Color::Black,
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[repr(i8)]
@@ -43,6 +103,17 @@ pub enum Color {
     White = 0,
     Black,
     ColorNb = 2,
+}
+
+impl Color {
+    #[inline(always)]
+    pub const fn other(self) -> Color {
+        match self {
+            Color::White  => Color::Black,
+            Color::Black => Color::White,
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[repr(u8)]
@@ -96,13 +167,50 @@ impl Rank {
 
 pub type Bitboard = u64;
 
+#[repr(u16)]
+pub enum MoveType {
+    Normal = 0u16 << 12,
+    Promotion = 1u16 << 12,
+    EnPassant = 2u16 << 12,
+    Castle = 3u16 << 12,
+}
+
+#[repr(u16)]
+pub enum PromotionType {
+    Queen = 0u16 << 14,
+    Rook = 1u16 << 14,
+    Bishop = 2u16 << 14,
+    Knight = 3u16 << 14,
+}
+
 #[derive(Copy, Clone)]
 pub struct Move(pub u16);
-impl Move{
+impl Move {
     #[inline(always)]
-    pub const fn new(from: Square, to: Square) -> Self {
+    pub const fn normal(from: Square, to: Square) -> Self {
         let from = from as u16;
         let to = to as u16;
         Move(from | (to << 6))
+    }
+    #[inline(always)]
+    pub const fn promotion(from: Square, to: Square, pt: PromotionType) -> Self {
+        let from = from as u16;
+        let to = to as u16;
+        Move(from | (to << 6) | (MoveType::Promotion as u16) | (pt as u16))
+    }
+}
+
+impl std::fmt::Display for Move {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let from = (self.0 & 0x3F) as u8;
+        let to = ((self.0 >> 6) & 0x3F) as u8;
+
+        fn square_to_str(sq: u8) -> String {
+            let file = (sq % 8) as u8 + b'A';
+            let rank = (sq / 8) as u8 + b'1';
+            format!("{}{}", file as char, rank as char)
+        }
+
+        write!(f, "{}-{}", square_to_str(from), square_to_str(to))
     }
 }
