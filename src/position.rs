@@ -32,6 +32,11 @@ impl Position {
         self.by_color[1 - (C as usize)]
     }
 
+    #[inline(always)]
+    pub fn ep_square(&self) -> Square {
+        self.state.last().unwrap().ep_square
+    }
+
     pub fn from_fen(fen: &str) -> Self {
         let mut board: [Piece; Square::SquareNb as usize] = [Piece::NoPiece; Square::SquareNb as usize];
         let mut by_type: [Bitboard; PieceType::PieceTypeNb as usize] = [0u64; PieceType::PieceTypeNb as usize];
@@ -57,12 +62,14 @@ impl Position {
             }
         }
 
+        let ep_square = Square::from_fen(fen_parts[3]);
+
         Position {
             board,
             by_type,
             by_color,
             state: vec![PositionState {
-                ep_square: Square::SquareNone
+                ep_square
             }]
         }
     }

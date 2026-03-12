@@ -76,7 +76,7 @@ impl Piece {
 }
 
 #[repr(i8)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Square {
     SquareNone = -1,
     A1 = 0, B1, C1, D1, E1, F1, G1, H1,
@@ -95,6 +95,31 @@ impl Square {
     pub const fn from_index(idx: i8) -> Self {
         debug_assert!(idx >= 0 && idx < 64);
         unsafe { std::mem::transmute(idx) }
+    }
+
+    #[inline(always)]
+    pub fn from_fen(fen: &str) -> Self {
+        debug_assert!(fen.len() >= 2);
+        match fen {
+            "a3" => Square::A3,
+            "b3" => Square::B3,
+            "c3" => Square::C3,
+            "d3" => Square::D3,
+            "e3" => Square::E3,
+            "f3" => Square::F3,
+            "g3" => Square::G3,
+            "h3" => Square::H3,
+            "a6" => Square::A6,
+            "b6" => Square::B6,
+            "c6" => Square::C6,
+            "d6" => Square::D6,
+            "e6" => Square::E6,
+            "f6" => Square::F6,
+            "g6" => Square::G6,
+            "h6" => Square::H6,
+            "-" => Square::SquareNone,
+            _ => unreachable!(),
+        }
     }
 }
 #[repr(u8)]
@@ -197,6 +222,13 @@ impl Move {
         let from = from as u16;
         let to = to as u16;
         Move(from | (to << 6) | (MoveType::Promotion as u16) | (pt as u16))
+    }
+
+    #[inline(always)]
+    pub const fn enpassant(from: Square, to: Square) -> Self {
+        let from = from as u16;
+        let to = to as u16;
+        Move(from | (to << 6) | (MoveType::EnPassant as u16))
     }
 }
 

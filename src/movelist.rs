@@ -59,4 +59,11 @@ impl MoveList {
             }
         }
     }
+
+    pub fn fill_enpassants(&mut self, mut from_bb: Bitboard, to: Square) {
+        while from_bb != 0 {
+            let sq = pop_lsb(&mut from_bb);
+            self.push(Move::enpassant(sq, to));
+        }
+    }
 }

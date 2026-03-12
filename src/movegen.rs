@@ -25,6 +25,7 @@ pub fn generate_moves<const PT: u8, const US: u8>(pos: &Position, target: Bitboa
 }
 pub fn gen_pawn<const US: u8, const T: u8>(pos: &Position, target: Bitboard, movelist: &mut MoveList) {
     let white = US == Color::White as u8;
+    let them = 1 - US;
 
     let forward = if white { Direction::North } else { Direction::South };
     let capture_left = if white { Direction::NorthWest } else { Direction::SouthEast };
@@ -62,6 +63,11 @@ pub fn gen_pawn<const US: u8, const T: u8>(pos: &Position, target: Bitboard, mov
     if gen_capture {
         movelist.fill_pawns(capture_left_moves & target, capture_left_step);
         movelist.fill_pawns(capture_right_moves & target, capture_right_step);
+
+        if pos.ep_square() != Square::SquareNone {
+            let bb = pawns & PAWN_BB[them as usize][pos.ep_square() as usize];
+            movelist.fill_enpassants(bb, pos.ep_square());
+        }
     }
 
     if pawns_rank7 != 0 {
@@ -141,6 +147,35 @@ const KING_BB: [Bitboard; Square::SquareNb as usize] = {
             }
             i += 1;
         }
+        sq += 1;
+    }
+    result
+};
+const PAWN_BB: [[Bitboard; Square::SquareNb as usize]; Color::ColorNb as usize] = {
+    // Create result
+    let mut result: [[Bitboard; Square::SquareNb as usize]; Color::ColorNb as usize] = [[0u64; Square::SquareNb as usize]; Color::ColorNb as usize];
+    // Start with First Square
+    let mut sq: i8 = Square::A1 as i8;
+    while sq < 64 {
+
+        let nw = sq + 7;
+        let ne = sq + 9;
+        let se = sq - 7;
+        let sw = sq - 9;
+
+        if nw >= 0 && nw < 64 && ((sq & 0b111) - (nw & 0b111i8)).abs() <= 1 {
+            result[Color::White as usize][sq as usize] |= 1u64 << nw;
+        }
+        if ne >= 0 && ne < 64 && ((sq & 0b111) - (ne & 0b111i8)).abs() <= 1 {
+            result[Color::White as usize][sq as usize] |= 1u64 << ne;
+        }
+        if sw >= 0 && sw < 64 && ((sq & 0b111) - (sw & 0b111i8)).abs() <= 1 {
+            result[Color::Black as usize][sq as usize] |= 1u64 << sw;
+        }
+        if se >= 0 && se < 64 && ((sq & 0b111) - (se & 0b111i8)).abs() <= 1 {
+            result[Color::Black as usize][sq as usize] |= 1u64 << se;
+        }
+
         sq += 1;
     }
     result
