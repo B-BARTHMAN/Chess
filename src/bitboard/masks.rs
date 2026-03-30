@@ -20,5 +20,5 @@ pub const RANK_8: Bitboard = RANK_1 << (8 * 7);
 
 #[inline]
 pub const fn square_bb(square: Square) -> Bitboard {
-  1u64 << (square as usize)
+    1u64 << (square as usize)
 }
