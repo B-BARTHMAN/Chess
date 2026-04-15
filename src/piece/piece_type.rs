@@ -14,15 +14,6 @@ pub enum PieceType {
     King,
 }
 
-pub const PIECE_TYPES: [PieceType; 6] = [
-    PieceType::Pawn,
-    PieceType::Knight,
-    PieceType::Bishop,
-    PieceType::Rook,
-    PieceType::Queen,
-    PieceType::King,
-];
-
 impl Indexable for PieceType {
     fn idx(self) -> usize {
         self as usize

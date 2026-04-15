@@ -1,25 +1,12 @@
 use crate::board::square::Square;
+use crate::moves::move_type::MoveType;
+use crate::moves::promotion_type::PromotionType;
 use crate::piece::piece_type::PieceType;
 use crate::position::castling::CastlingRights;
 
 // P P M M T T T T T T F F F F F F
 #[derive(Copy, Clone)]
 pub struct Move(pub u16);
-#[repr(u16)]
-#[derive(Copy, Clone, PartialEq, Eq)]
-pub enum MoveType {
-    Normal = 0u16 << 12,
-    Promotion = 1u16 << 12,
-    EnPassant = 2u16 << 12,
-    Castle = 3u16 << 12,
-}
-#[repr(u16)]
-pub enum PromotionType {
-    Queen = 0u16 << 14,
-    Rook = 1u16 << 14,
-    Bishop = 2u16 << 14,
-    Knight = 3u16 << 14,
-}
 impl Move {
     #[inline]
     pub const fn normal(from_sq: Square, to_sq: Square) -> Self { Move((from_sq as u16) | ((to_sq as u16) << 6) | (MoveType::Normal as u16)) }
@@ -79,16 +66,6 @@ impl Move {
             0b10 => PromotionType::Bishop,
             0b11 => PromotionType::Knight,
             _ => unreachable!(),
-        }
-    }
-}
-impl PromotionType {
-    pub const fn piece_type(self) -> PieceType {
-        match self {
-            PromotionType::Queen => PieceType::Queen,
-            PromotionType::Rook => PieceType::Rook,
-            PromotionType::Bishop => PieceType::Bishop,
-            PromotionType::Knight => PieceType::Knight,
         }
     }
 }

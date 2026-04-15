@@ -1,3 +1,5 @@
+use crate::board::square::Square;
+
 #[repr(i8)]
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum File {
@@ -27,4 +29,9 @@ impl File {
             _ => File::None,
         }
     }
+
+    #[inline]
+    pub const fn is_valid(rank: File) -> bool { 0 <= (rank as i8) && (rank as i8) < 8 }
 }
+#[inline]
+pub const fn file_of(square: Square) -> File { File::from_index((square as i8) & 0b111) }

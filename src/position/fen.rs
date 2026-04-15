@@ -1,11 +1,11 @@
 use crate::bitboard::bitboard::Bitboard;
-use crate::board::square::{Square, SQUARE_COUNT};
+use crate::board::square::{SQUARE_COUNT, Square};
 use crate::piece::color::{COLOR_COUNT, Color};
 use crate::piece::piece::Piece;
 use crate::piece::piece_type::{PIECE_TYPE_COUNT, PieceType};
 use crate::position::castling::CastlingRights;
 use crate::position::position::Position;
-use crate::position::state::State;
+use crate::position::state::{State, StateStack};
 use crate::util::by::By;
 
 impl Position {
@@ -46,11 +46,13 @@ impl Position {
             by_type,
             by_color,
             by_square,
-            states: vec![State {
-                ep_square,
-                castling_rights,
-                captured: None,
-            }],
+            states: StateStack(
+                vec![State { 
+                    ep_square,
+                    castling_rights,
+                    captured: None, 
+                }]
+            ),
             side_to_move,
         }
     }

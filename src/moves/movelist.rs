@@ -1,3 +1,5 @@
+use std::ops::Index;
+use rand::Rng;
 use crate::moves::chess_move::Move;
 const MAX_MOVES: usize = 218;
 
@@ -23,5 +25,18 @@ impl MoveList {
     #[inline]
     pub fn iter(&self) -> impl Iterator<Item = &Move> {
         self.moves[..self.count].iter()
+    }
+
+    #[inline]
+    pub fn shuffle(&mut self, rng: &mut impl Rng) {
+        use rand::seq::SliceRandom;
+        self.moves[..self.count].shuffle(rng);
+    }
+}
+
+impl Index<usize> for MoveList {
+    type Output = Move;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.moves[index]
     }
 }

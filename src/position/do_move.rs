@@ -1,9 +1,10 @@
 use crate::bitboard::masks::square_bb;
 use crate::bitboard::shift::shift_square;
 use crate::board::square::Square;
-use crate::moves::chess_move::{Move, MoveType};
+use crate::moves::chess_move::{Move};
+use crate::moves::move_type::MoveType;
 use crate::piece::color::Color;
-use crate::piece::piece_type::{PIECE_TYPES, PieceType};
+use crate::piece::piece_type::{PieceType};
 use crate::position::castling::CastlingRights;
 use crate::position::position::Position;
 use crate::position::state::State;
@@ -44,9 +45,9 @@ impl Position {
                     self.remove_piece(cap_sq, captured);
                     new_state.captured = Some(captured);
                 }
-                _ if (from as i8 - to as i8).abs() == 16 => {
+                _ if Square::rank_distance(from, to) == 2 => {
                     // Double push: set en-passant square on the skipped square
-                    new_state.ep_square = Square::from_index((from as i8 + to as i8) / 2);
+                    new_state.ep_square = Square::midpoint(from, to);
                 }
                 _ => {}
             }
@@ -82,7 +83,7 @@ impl Position {
         self.side_to_move = us.other();
     }
     pub fn undo_move(&mut self, m: Move) {
-        let state = self.states.pop().unwrap();
+        let state = self.states.pop();
         let from = m.from();
         let to = m.to();
         let them = self.side_to_move;
@@ -113,8 +114,8 @@ impl Position {
 
         // restore captured piece
         if let Some(piece) = state.captured {
-            let cap_sq = if m.0 & (MoveType::EnPassant as u16) != 0 {
-                Square::from_index((to as i8 + if us == Color::White { -8 } else { 8 }))
+            let cap_sq = if m.move_type() == MoveType::EnPassant {
+                shift_square(to, us.forward().opposite())
             } else {
                 to
             };

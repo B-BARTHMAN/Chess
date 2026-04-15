@@ -1,3 +1,5 @@
+use crate::board::square::Square;
+
 #[repr(i8)]
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Rank {
@@ -26,4 +28,9 @@ impl Rank {
             _ => Rank::None,
         }
     }
+
+    #[inline]
+    pub const fn is_valid(rank: Rank) -> bool { 0 <= (rank as i8) && (rank as i8) < 8 }
+
 }
+pub const fn rank_of(square: Square) -> Rank { Rank::from_index((square as i8) >> 3) }

@@ -1,5 +1,5 @@
 use crate::board::file::File;
-use crate::board::rank::Rank;
+use crate::board::rank::{rank_of, Rank};
 use crate::util::indexable::Indexable;
 
 pub const SQUARE_COUNT: usize = 64;
@@ -82,10 +82,6 @@ impl Indexable for Square {
 
 impl Square {
     #[inline]
-    pub const fn idx(self) -> usize {
-        self as usize
-    }
-    #[inline]
     pub const fn from_index(idx: i8) -> Self {
         match idx {
             0 => Square::A1,
@@ -156,39 +152,11 @@ impl Square {
         }
     }
     #[inline]
-    pub fn ep_square(fen: &str) -> Self {
-        debug_assert!(fen.len() <= 2);
-        match fen {
-            "a3" => Square::A3,
-            "b3" => Square::B3,
-            "c3" => Square::C3,
-            "d3" => Square::D3,
-            "e3" => Square::E3,
-            "f3" => Square::F3,
-            "g3" => Square::G3,
-            "h3" => Square::H3,
-            "a6" => Square::A6,
-            "b6" => Square::B6,
-            "c6" => Square::C6,
-            "d6" => Square::D6,
-            "e6" => Square::E6,
-            "f6" => Square::F6,
-            "g6" => Square::G6,
-            "h6" => Square::H6,
-            "-" => Square::None,
-            _ => panic!(),
-        }
-    }
+    pub const fn rank_distance(from: Square, to: Square) -> u8 { ((rank_of(from) as i8) - (rank_of(to) as i8)).unsigned_abs() }
     #[inline]
-    pub const fn is_ok(square: Square) -> bool {
+    pub const fn midpoint(from: Square, to: Square) -> Square { Square::from_index((from as i8 + to as i8) / 2) }
+    #[inline]
+    pub const fn is_valid(square: Square) -> bool {
         0 <= (square as i8) && (square as i8) < 64
-    }
-    #[inline]
-    pub const fn file(&self) -> File {
-        File::from_index((*self as i8) & 0b111)
-    }
-    #[inline(always)]
-    pub const fn rank(&self) -> Rank {
-        Rank::from_index((*self as i8) >> 3)
     }
 }

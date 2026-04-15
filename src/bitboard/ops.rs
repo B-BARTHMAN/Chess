@@ -17,6 +17,6 @@ pub const fn pop_lsb(bb: &mut Bitboard) -> Square {
 }
 
 #[inline]
-pub fn count_1s(bb: Bitboard) -> u8 {
-    bb.count_ones() as u8
+pub const fn count_ones(bb: Bitboard) -> i32 {
+    bb.count_ones() as i32
 }

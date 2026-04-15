@@ -7,3 +7,11 @@ pub struct State {
     pub castling_rights: CastlingRights,
     pub captured: Option<Piece>,
 }
+
+pub struct StateStack(pub Vec<State>);
+
+impl StateStack {
+    pub fn push(&mut self, state: State) {self.0.push(state); }
+    pub fn pop(&mut self) -> State {self.0.pop().expect("state stack underflow") }
+    pub fn current(&self) -> &State {&self.0.last().expect("state stack empty") }
+}
