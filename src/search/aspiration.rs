@@ -7,9 +7,9 @@ use crate::search::searcher::SearchWorker;
 // Your eval is currently in whole pawns (pawn=1, queen=9), so these are in
 // pawns too. With a centipawn eval you'd bump the initial delta to ~25 and
 // the cap to ~1000.
-pub const ASPIRATION_MIN_DEPTH: i32 = 2;
+pub const ASPIRATION_MIN_DEPTH: i32 = 3;
 const ASPIRATION_INITIAL_DELTA: Score = 1;
-const ASPIRATION_MAX_DELTA: Score = 64;
+const ASPIRATION_MAX_DELTA: Score = 1000;
 
 impl SearchWorker {
   pub fn aspiration_search(&self, pos: &mut Position, depth: i32, prev_score: Score) -> (Move, Score) {

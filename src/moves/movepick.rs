@@ -27,7 +27,7 @@ impl MovePicker {
 
     if pos.in_check() {
       gen_evasions(pos, &mut movelist);
-      movelist.shuffle(&mut rand::rng());
+      //movelist.shuffle(&mut rand::rng());
       return MovePicker {
         captures_end: movelist.len(),
         movelist,
@@ -37,12 +37,12 @@ impl MovePicker {
     }
 
     gen_captures(pos, &mut movelist);
-    movelist.shuffle_range(0, movelist.len(), &mut rand::rng());
+    //movelist.shuffle_range(0, movelist.len(), &mut rand::rng());
     let captures_end = movelist.len();
 
     if let SearchMode::Search = mode {
       gen_quiet(pos, &mut movelist);
-      movelist.shuffle_range(captures_end, movelist.len(), &mut rand::rng());
+      //movelist.shuffle_range(captures_end, movelist.len(), &mut rand::rng());
     }
 
     MovePicker {movelist, captures_end, stage: Stage::Captures, index: 0}

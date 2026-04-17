@@ -13,7 +13,7 @@ impl<K: Indexable, V, const N: usize> IndexMut<K> for By<K, V, N> {
   fn index_mut(&mut self, index: K) -> &mut Self::Output { &mut self.0[index.idx()] }
 }
 impl<K:Indexable, V: Copy, const N: usize> By<K, V, N> {
-  pub fn new(value: V) -> Self {
+  pub const fn new(value: V) -> Self {
     Self([value; N], PhantomData)
   }
 }

@@ -1,19 +1,21 @@
-use crate::bitboard::ops::count_ones;
 use crate::eval::Evaluator;
-use crate::piece::piece_type::PieceType;
+use crate::eval::psqt::PIECE_SQUARE_VALUE;
+use crate::board::square::{Square, SQUARE_COUNT};
+use crate::piece::color::Color;
+use crate::piece::piece::Piece;
 use crate::position::position::Position;
 
-pub struct MaterialEvaluator;
+pub struct PSQTEvaluator;
 
-impl Evaluator for MaterialEvaluator {
+impl Evaluator for PSQTEvaluator {
   fn eval(&self, pos: &Position) -> i32 {
-    let us = pos.side_to_move;
-    let them = us.other();
-
-      1 * (count_ones(pos.pieces(PieceType::Pawn, us)) - count_ones(pos.pieces(PieceType::Pawn, them))) +
-      3 * (count_ones(pos.pieces(PieceType::Knight, us)) - count_ones(pos.pieces(PieceType::Knight, them))) +
-      3 * (count_ones(pos.pieces(PieceType::Bishop, us)) - count_ones(pos.pieces(PieceType::Bishop, them))) +
-      5 * (count_ones(pos.pieces(PieceType::Rook, us)) - count_ones(pos.pieces(PieceType::Rook, them))) +
-      9 * (count_ones(pos.pieces(PieceType::Queen, us)) - count_ones(pos.pieces(PieceType::Queen, them)))
+    let mut score = 0;
+    for sq_idx in 0..(SQUARE_COUNT as i8) {
+      let sq = Square::from_index(sq_idx);
+      let piece = pos.by_square[sq];
+      if piece == Piece::NoPiece { continue; }
+      score += PIECE_SQUARE_VALUE[piece as usize][sq_idx as usize];
+    }
+    if pos.side_to_move == Color::Black { -score } else { score }
   }
 }

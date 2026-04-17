@@ -1,7 +1,8 @@
 pub mod material;
 pub mod score;
+pub mod psqt;
 
-use crate::eval::material::MaterialEvaluator;
+use crate::eval::material::PSQTEvaluator;
 use crate::eval::score::Score;
 use crate::position::position::Position;
 
@@ -10,6 +11,6 @@ pub trait Evaluator {
 }
 
 pub fn evaluate(position: &Position) -> Score {
-  let material : MaterialEvaluator = MaterialEvaluator {};
+  let material : PSQTEvaluator = PSQTEvaluator {};
   material.eval(position)
 }
