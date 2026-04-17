@@ -1,5 +1,5 @@
 use std::ops::Index;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use crate::moves::chess_move::Move;
 const MAX_MOVES: usize = 218;
 
@@ -31,6 +31,18 @@ impl MoveList {
     pub fn shuffle(&mut self, rng: &mut impl Rng) {
         use rand::seq::SliceRandom;
         self.moves[..self.count].shuffle(rng);
+    }
+
+    pub fn shuffle_range(&mut self, start: usize, end: usize, rng: &mut impl Rng) {
+        let slice = &mut self.moves[start..end];
+        for i in (1..slice.len()).rev() {
+            let j = rng.random_range(0..=i);
+            slice.swap(i, j);
+        }
+    }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.count
     }
 }
 
