@@ -1,10 +1,13 @@
 use crate::eval::score::{Score, DRAW_SCORE, INF, MATE_SCORE};
 use crate::moves::movepick::{MovePicker, SearchMode};
 use crate::position::position::Position;
-use crate::search::Searcher;
+use crate::search::searcher::SearchWorker;
 
-impl Searcher {
+impl SearchWorker {
   pub fn negamax(&self, pos: &mut Position, depth: i32, mut alpha: Score, beta: Score, ply: i32) -> Score {
+    // Abort check. Returned value is irrelevant — root discards it.
+    if self.should_stop() { return 0; }
+
     // Terminal: Enter qsearch
     if depth == 0 {
       return self.qsearch(pos, alpha, beta, ply);
