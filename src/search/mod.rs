@@ -3,3 +3,4 @@ pub mod qsearch;
 pub mod search;
 pub mod searcher;
 pub mod aspiration;
+pub mod tt;

@@ -12,7 +12,7 @@ const ASPIRATION_INITIAL_DELTA: Score = 1;
 const ASPIRATION_MAX_DELTA: Score = 1000;
 
 impl SearchWorker {
-  pub fn aspiration_search(&self, pos: &mut Position, depth: i32, prev_score: Score) -> (Move, Score) {
+  pub fn aspiration_search(&mut self, pos: &mut Position, depth: i32, prev_score: Score) -> (Move, Score) {
     let mut delta = ASPIRATION_INITIAL_DELTA;
     let mut alpha = (prev_score - delta).max(-INF);
     let mut beta  = (prev_score + delta).min(INF);

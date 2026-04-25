@@ -6,7 +6,7 @@ use crate::search::aspiration::ASPIRATION_MIN_DEPTH;
 use crate::search::searcher::SearchWorker;
 
 impl SearchWorker {
-  pub fn search(&self, pos: &mut Position, max_depth: i32) -> (Move, Score) {
+  pub fn search(&mut self, pos: &mut Position, max_depth: i32) -> (Move, Score) {
     let mut best_move = Move(0);
     let mut best_score = -INF;
 
@@ -25,16 +25,19 @@ impl SearchWorker {
 
     (best_move, best_score)
   }
-  pub fn search_root(&self, pos: &mut Position, depth: i32, mut alpha: Score, beta: Score) -> (Move, Score) {
+
+  pub fn search_root(&mut self, pos: &mut Position, depth: i32, mut alpha: Score, beta: Score) -> (Move, Score) {
     let mut best_move = Move(0);
     let mut best_score = -INF;
 
-    for mv in MovePicker::new(pos, SearchMode::Search) {
+    // Use TT move at the root too, so iterative deepening reuses last iteration's PV move.
+    let tt_move = self.tt.probe(pos.state().zobrist).and_then(|e| if e.mv.0 != 0 { Some(e.mv) } else { None });
+
+    for mv in MovePicker::new(pos, SearchMode::Search, tt_move) {
       pos.do_move(mv);
       if !pos.is_legal() { pos.undo_move(mv); continue; }
 
       let score = -self.negamax(pos, depth - 1, -beta, -alpha, 1);
-
       pos.undo_move(mv);
 
       if self.should_stop() { break; }
