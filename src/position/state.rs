@@ -6,6 +6,7 @@ pub struct State {
     pub ep_square: Square,
     pub castling_rights: CastlingRights,
     pub captured: Option<Piece>,
+    pub zobrist: u64
 }
 
 pub struct StateStack(pub Vec<State>);

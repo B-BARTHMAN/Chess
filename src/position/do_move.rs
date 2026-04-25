@@ -1,5 +1,6 @@
 use crate::bitboard::masks::square_bb;
 use crate::bitboard::shift::shift_square;
+use crate::board::file::file_of;
 use crate::board::square::Square;
 use crate::moves::chess_move::{Move};
 use crate::moves::move_type::MoveType;
@@ -9,6 +10,7 @@ use crate::position::castling::CastlingRights;
 use crate::position::position::Position;
 use crate::position::state::State;
 use crate::piece::piece::Piece;
+use crate::position::zobrist::{CASTLING_KEYS, EP_FILE_KEYS, PIECE_SQUARE_KEYS, SIDE_TO_MOVE_KEY};
 
 impl Position {
     pub fn do_move(&mut self, m: Move) {
@@ -18,17 +20,24 @@ impl Position {
         let them = us.other();
         let moved = self.by_square[from];
 
+        let prev = self.state();
+        let mut hash = prev.zobrist;
+        let old_rights = prev.castling_rights;
+        let old_ep = prev.ep_square;
+
         // Create new state
         let mut new_state = State {
             ep_square: Square::None,
-            castling_rights: self.state().castling_rights,
+            castling_rights: old_rights,
             captured: None,
+            zobrist: 0, // filled in at end
         };
 
         // Handle capture
         if self.by_color[them] & square_bb(to) != 0 {
             let captured = self.by_square[to];
             self.remove_piece(to, captured);
+            hash ^= PIECE_SQUARE_KEYS[captured as usize][to as usize];
             new_state.captured = Some(captured);
         }
 
@@ -43,6 +52,7 @@ impl Position {
                     debug_assert!(captured.piece_type() == PieceType::Pawn);
 
                     self.remove_piece(cap_sq, captured);
+                    hash ^= PIECE_SQUARE_KEYS[captured as usize][cap_sq as usize];
                     new_state.captured = Some(captured);
                 }
                 _ if Square::rank_distance(from, to) == 2 => {
@@ -53,33 +63,57 @@ impl Position {
             }
         }
 
-        // Move Piece
+        // EP file diff
+        if old_ep != Square::None {
+            hash ^= EP_FILE_KEYS[file_of(old_ep) as usize];
+        }
+        if new_state.ep_square != Square::None {
+            hash ^= EP_FILE_KEYS[file_of(new_state.ep_square) as usize];
+        }
+
+        // Move piece
         self.move_piece(from, to, moved);
+        hash ^= PIECE_SQUARE_KEYS[moved as usize][from as usize];
+        hash ^= PIECE_SQUARE_KEYS[moved as usize][to as usize];
 
         // Promotion
         if m.move_type() == MoveType::Promotion {
             self.remove_piece(to, moved);
-            self.add_piece(to, Piece::new(us, m.promotion_type().piece_type()));
+            let promo = Piece::new(us, m.promotion_type().piece_type());
+            self.add_piece(to, promo);
+            hash ^= PIECE_SQUARE_KEYS[moved as usize][to as usize];
+            hash ^= PIECE_SQUARE_KEYS[promo as usize][to as usize];
         }
 
-        // Castling
+        // Castling — move the rook
         if m.move_type() == MoveType::Castle {
-            match to {
-                Square::G1 => self.move_piece(Square::H1, Square::F1, Piece::new(us, PieceType::Rook)),
-                Square::C1 => self.move_piece(Square::A1, Square::D1, Piece::new(us, PieceType::Rook)),
-                Square::G8 => self.move_piece(Square::H8, Square::F8, Piece::new(us, PieceType::Rook)),
-                Square::C8 => self.move_piece(Square::A8, Square::D8, Piece::new(us, PieceType::Rook)),
+            let rook = Piece::new(us, PieceType::Rook);
+            let (rook_from, rook_to) = match to {
+                Square::G1 => (Square::H1, Square::F1),
+                Square::C1 => (Square::A1, Square::D1),
+                Square::G8 => (Square::H8, Square::F8),
+                Square::C8 => (Square::A8, Square::D8),
                 _ => unreachable!(),
-            }
+            };
+            self.move_piece(rook_from, rook_to, rook);
+            hash ^= PIECE_SQUARE_KEYS[rook as usize][rook_from as usize];
+            hash ^= PIECE_SQUARE_KEYS[rook as usize][rook_to as usize];
         }
 
         // Update castling rights
         self.update_castling_rights(from, to, moved.piece_type(), us, &mut new_state);
 
-        // Push new state
-        self.states.push(new_state);
+        // Castling rights diff
+        if new_state.castling_rights != old_rights {
+            hash ^= CASTLING_KEYS[old_rights.bits() as usize];
+            hash ^= CASTLING_KEYS[new_state.castling_rights.bits() as usize];
+        }
 
-        // Switch side
+        // Side to move toggles every move
+        hash ^= SIDE_TO_MOVE_KEY;
+
+        new_state.zobrist = hash;
+        self.states.push(new_state);
         self.side_to_move = us.other();
     }
     pub fn undo_move(&mut self, m: Move) {

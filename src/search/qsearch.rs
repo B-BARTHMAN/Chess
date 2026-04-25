@@ -9,7 +9,14 @@ impl SearchWorker {
     // Abort check. Returned value is irrelevant — root discards it.
     if self.should_stop() { return 0; }
 
-    let mut best: Score = -INF;
+    // Standing Pat
+    let stand_pat = evaluate(pos);
+
+    if stand_pat >= beta { return beta; }
+    if stand_pat > alpha { alpha = stand_pat; }
+
+    let mut best: Score = stand_pat;
+
     // Move loop: Generate Moves
     let picker: MovePicker = MovePicker::new(pos, SearchMode::QSearch);
 
@@ -26,9 +33,6 @@ impl SearchWorker {
       if score > alpha { alpha = score; }
       if score >= beta { return beta; }
     }
-
-    // No captures left: evaluate the position
-    if best == -INF { return evaluate(pos); }
 
     best
   }
