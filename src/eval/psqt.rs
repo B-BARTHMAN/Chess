@@ -1,3 +1,8 @@
+use crate::board::square::SQUARE_COUNT;
+use crate::eval::score::Score;
+use crate::piece::piece::{Piece, PIECE_COUNT};
+use crate::piece::piece_type::PieceType;
+
 const PAWN_VALUE:   i32 = 100;
 const KNIGHT_VALUE: i32 = 320;
 const BISHOP_VALUE: i32 = 330;
@@ -12,7 +17,7 @@ const PAWN_PST: [i32; 64] = [
   50,  50,  50,  50,  50,  50,  50,  50,
   10,  10,  20,  30,  30,  20,  10,  10,
   5,   5,  10,  25,  25,  10,   5,   5,
-  0,   0,   0,  20,  20,   0,   0,   0,
+  0,   0,   0,  20,  2000,   0,   0,   0,
   5,  -5, -10,   0,   0, -10,  -5,   5,
   5,  10,  10, -20, -20,  10,  10,   5,
   0,   0,   0,   0,   0,   0,   0,   0,
@@ -101,15 +106,15 @@ const fn pst_at(kind: usize, visual_idx: usize) -> i32 {
   }
 }
 
-const fn compute_psqt() -> [[i32; 64]; 12] {
-  let mut result = [[0i32; 64]; 12];
+const fn compute_psqt() -> [[Score; SQUARE_COUNT]; PIECE_COUNT] {
+  let mut result = [[0i32; SQUARE_COUNT]; PIECE_COUNT];
   let mut p = 0;
   while p < 12 {
     let kind = p % 6;
     let is_white = p < 6;
     let mut sq = 0;
     while sq < 64 {
-      let visual_idx = if is_white { sq ^ 56 } else { sq };
+      let visual_idx = if is_white { sq ^ 0b111000 } else { sq };
       let value = material_for(kind) + pst_at(kind, visual_idx);
       result[p][sq] = if is_white { value } else { -value };
       sq += 1;
@@ -119,4 +124,4 @@ const fn compute_psqt() -> [[i32; 64]; 12] {
   result
 }
 
-pub const PIECE_SQUARE_VALUE: [[i32; 64]; 12] = compute_psqt();
+pub const PIECE_SQUARE_VALUE: [[Score; SQUARE_COUNT]; PIECE_COUNT] = compute_psqt();
